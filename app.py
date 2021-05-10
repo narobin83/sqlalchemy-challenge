@@ -10,3 +10,8 @@ from sqlalchemy.sql import exists
 
 from flask import Flask, jsonify
 
+engine = create_engine("sqlite:///Resources/hawaii.sqlite")
+
+Base = automap_base()
+
+Base.prepare(engine, reflect=True)
