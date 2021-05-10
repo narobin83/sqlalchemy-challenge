@@ -57,3 +57,40 @@ def precipitation():
 
     return jsonify(precipitation_date_tobs)
 
+@app.route("/api/v1.0/stations") 
+def stations():
+    # Create session (link) from Python to the DB
+    session = Session(engine)
+
+    # Query Stations
+    results = session.query(Station.name).all()
+
+    # Convert list of tuples into normal list
+    station_details = list(np.ravel(results))
+
+    return jsonify(station_details)
+
+@app.route("/api/v1.0/tobs") 
+def tobs():
+    # Create our session (link) from Python to the DB
+    session = Session(engine)
+
+    # Query Measurements for latest date and calculate query_start_date
+    latest_date = (session.query(Measurement.date)
+                          .order_by(Measurement.date
+                          .desc())
+                          .first())
+    
+    latest_date_str = str(latest_date)
+    latest_date_str = re.sub("'|,", "",latest_date_str)
+    latest_date_obj = dt.datetime.strptime(latest_date_str, '(%Y-%m-%d)')
+    query_start_date = dt.date(latest_date_obj.year, latest_date_obj.month, latest_date_obj.day) - dt.timedelta(days=366)
+     
+    # Query station names and their observation counts sorted descending and select most active station
+    q_station_list = (session.query(Measurement.station, func.count(Measurement.station))
+                             .group_by(Measurement.station)
+                             .order_by(func.count(Measurement.station).desc())
+                             .all())
+    
+    station_hno = q_station_list[0][0]
+    print(station_hno)  
