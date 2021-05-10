@@ -94,3 +94,42 @@ def tobs():
     
     station_hno = q_station_list[0][0]
     print(station_hno)  
+
+    # Return a list of tobs for the year before the final date
+    results = (session.query(Measurement.station, Measurement.date, Measurement.tobs)
+                      .filter(Measurement.date >= query_start_date)
+                      .filter(Measurement.station == station_hno)
+                      .all())
+
+    # Create JSON results
+    tobs_list = []
+    for result in results:
+        line = {}
+        line["Date"] = result[1]
+        line["Station"] = result[0]
+        line["Temperature"] = int(result[2])
+        tobs_list.append(line)
+
+    return jsonify(tobs_list)
+
+
+@app.route("/api/v1.0/<start>") 
+def start_only(start):
+
+    # Create session (link) from Python to the DB
+    session = Session(engine)
+
+    # Date Range (only for help to user in case date gets entered wrong)
+    date_range_max = session.query(Measurement.date).order_by(Measurement.date.desc()).first()
+    date_range_max_str = str(date_range_max)
+    date_range_max_str = re.sub("'|,", "",date_range_max_str)
+    print (date_range_max_str)
+
+    date_range_min = session.query(Measurement.date).first()
+    date_range_min_str = str(date_range_min)
+    date_range_min_str = re.sub("'|,", "",date_range_min_str)
+    print (date_range_min_str)
+
+
+    # Check for valid entry of start date
+    valid_entry = session.query(exists().where(Measurement.date == start)).scalar()
